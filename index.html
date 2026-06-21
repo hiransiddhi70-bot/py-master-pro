@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Master Flashcards - Code With Siddhi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        :root {
+            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --accent: #3776ab; --python: #ffd43b; --green: #10b981; --red: #ef4444; --yellow: #f59e0b; --purple: #8b5cf6;
+        }
+        [data-theme="light"] { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --accent: #306998; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .python { color: var(--python); }
+        .header p { opacity: 0.8; font-size: 1.1rem; }
+        .level-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; margin: 5px; }
+        .level-1 { background: var(--green); color: white; }
+        .level-2 { background: var(--accent); color: white; }
+        .level-3 { background: var(--yellow); color: #000; }
+        .level-4 { background: var(--purple); color: white; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        button, select, input { padding: 12px 20px; border: none; border-radius: 12px; background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; font-size: 1rem; }
+        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-python { background: var(--python); color: #000; }
+        .btn-green { background: var(--green); color: white; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-yellow { background: var(--yellow); color: #000; }
+        .btn-purple { background: var(--purple); color: white; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 16px; text-align: center; }
+        .stat-card h3 { font-size: 2rem; color: var(--accent); margin-bottom: 5px; }
+        .card-container { perspective: 1000px; margin: 30px auto; max-width: 650px; height: 450px; }
+        .flashcard { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: var(--card); border-radius: 20px; padding: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border: 3px solid var(--accent); }
+        .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, var(--card), var(--bg)); }
+        .card-category { position: absolute; top: 20px; left: 20px; background: var(--python); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; }
+        .card-level { position: absolute; top: 20px; right: 20px; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+        .card-question { font-size: 1.7rem; text-align: center; line-height: 1.4; margin: 20px 0; }
+        .card-code { background: var(--bg); padding: 15px; border-radius: 12px; font-family: 'Courier New', monospace; font-size: 1rem; margin: 15px 0; width: 100%; text-align: left; border-left: 4px solid var(--python); overflow-x: auto; }
+        .card-answer { font-size: 1.2rem; text-align: center; line-height: 1.6; }
+        .flip-hint { position: absolute; bottom: 20px; opacity: 0.6; font-size: 0.9rem; }
+        .actions { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 20px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-content h2 { margin-bottom: 20px; color: var(--accent); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input,.form-group textarea,.form-group select { width: 100%; }
+        textarea { min-height: 100px; font-family: 'Courier New', monospace; }
+        .card-list { max-height: 400px; overflow-y: auto; margin-top: 20px; }
+        .card-item { background: var(--bg); padding: 15px; border-radius: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; width: auto; z-index: 100; }
+        .progress-bar { height: 8px; background: var(--card); border-radius: 4px; overflow: hidden; margin: 20px 0; }
+        .progress { height: 100%; background: linear-gradient(90deg, var(--python), var(--accent)); transition: 0.3s; }
+        .quiz-container { background: var(--card); padding: 30px; border-radius: 20px; margin: 30px auto; max-width: 650px; display: none; }
+        .quiz-container.active { display: block; }
+        .quiz-question { font-size: 1.5rem; margin-bottom: 20px; }
+        .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+        .quiz-option { background: var(--bg); padding: 15px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
+        .quiz-option:hover { border-color: var(--accent); transform: translateX(5px); }
+        .quiz-option.correct { background: var(--green); border-color: var(--green); color: white; }
+        .quiz-option.wrong { background: var(--red); border-color: var(--red); color: white; }
+        .quiz-result { text-align: center; margin-top: 20px; font-size: 1.2rem; font-weight: 700; }
+        .topic-complete { background: linear-gradient(135deg, var(--green), var(--accent)); color: white; padding: 20px; border-radius: 16px; text-align: center; margin: 20px 0; display: none; }
+        .topic-complete.active { display: block; animation: pulse 1s; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .card-question { font-size: 1.4rem; }
+            .card-container { height: 400px; }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <button class="theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+    <div class="container">
+        <div class="header">
+            <h1><span class="python">Python</span> Master Course 🐍</h1>
+            <p>Code With Siddhi - 18yo from Ahilyanagar 💻</p>
+            <div style="margin-top: 15px;">
+                <span class="level-badge level-1">Level 1: Beginner</span>
+                <span class="level-badge level-2">Level 2: Intermediate</span>
+                <span class="level-badge level-3">Level 3: Advanced</span>
+                <span class="level-badge level-4">Level 4: Pro</span>
+            </div>
+            <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.7;">Scratch se Pro tak - 50+ Cards + Quizzes 🚀</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="totalCards">0</h3>
+                <p>Total Cards</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="learnedCards">0</h3>
+                <p>Mastered ✅</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="quizScore">0%</h3>
+                <p>Quiz Score</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="streak">0</h3>
+                <p>🔥 Streak</p>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress" id="progressBar" style="width: 0%"></div>
+        </div>
+
+        <div class="topic-complete" id="topicComplete">
+            <h2>🎉 Topic Mastered!</h2>
+            <p>Ab quiz de kar apna knowledge test karo!</p>
+        </div>
+
+        <div class="controls">
+            <select id="levelFilter" onchange="filterByLevel()">
+                <option value="all">All Levels</option>
+                <option value="1">Level 1: Beginner 🟢</option>
+                <option value="2">Level 2: Intermediate 🔵</option>
+                <option value="3">Level 3: Advanced 🟡</option>
+                <option value="4">Level 4: Pro 🟣</option>
+            </select>
+            <select id="categoryFilter" onchange="filterCards()">
+                <option value="all">All Topics</option>
+                <option value="basics">Basics & Syntax</option>
+                <option value="data-types">Data Types</option>
+                <option value="operators">Operators</option>
+                <option value="conditionals">If-Else</option>
+                <option value="loops">Loops</option>
+                <option value="functions">Functions</option>
+                <option value="lists">Lists & Tuples</option>
+                <option value="dict">Dict & Sets</option>
+                <option value="strings">String Methods</option>
+                <option value="files">File Handling</option>
+                <option value="errors">Error Handling</option>
+                <option value="oops">OOPs</option>
+                <option value="modules">Modules</option>
+                <option value="advanced">Advanced Topics</option>
+            </select>
+            <button class="btn-python" onclick="shuffleCards()">🔀 Shuffle</button>
+            <button class="btn-yellow" onclick="startTopicQuiz()">📝 Quiz</button>
+            <button class="btn-green" onclick="openAddModal()">➕ Add</button>
+            <button onclick="openManageModal()">📋 Manage</button>
+        </div>
+
+        <div class="card-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="card-face card-front">
+                    <span class="card-category" id="cardCategory">Basics</span>
+                    <span class="card-level level-1" id="cardLevel">Level 1</span>
+                    <div class="card-question" id="cardQuestion">Click "Start Learning" to begin!</div>
+                    <div class="card-code" id="cardCode" style="display: none;"></div>
+                    <p class="flip-hint">👆 Tap to see answer</p>
+                </div>
+                <div class="card-face card-back">
+                    <span class="card-category">Answer</span>
+                    <span class="card-level level-1">Level 1</span>
+                    <div class="card-answer" id="cardAnswer">Let's master Python! 🐍</div>
+                    <div class="card-code" id="cardAnswerCode" style="display: none;"></div>
+                    <p class="flip-hint">👆 Tap to see question</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-red" onclick="markWrong()">❌ Don't Know</button>
+            <button onclick="prevCard()">⬅️ Previous</button>
+            <button onclick="nextCard()">Next ➡️</button>
+            <button class="btn-green" onclick="markCorrect()">✅ Got It!</button>
+        </div>
+        <!-- QUIZ SECTION -->
+        <div class="quiz-container" id="quizContainer">
+            <h2 style="text-align: center; margin-bottom: 20px;">📝 Topic Quiz</h2>
+            <div class="quiz-question" id="quizQuestion"></div>
+            <div class="quiz-options" id="quizOptions"></div>
+            <div class="quiz-result" id="quizResult"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-primary" onclick="nextQuizQuestion()" id="nextQuizBtn" style="display: none;">Next Question ➡️</button>
+                <button class="btn-green" onclick="finishQuiz()" id="finishQuizBtn" style="display: none;">Finish Quiz ✅</button>
+            </div>
+            <p style="text-align: center; margin-top: 15px; opacity: 0.7;">
+                Question <span id="quizCurrentQ">1</span> of <span id="quizTotalQ">5</span>
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; opacity: 0.7;">
+            <p>Card <span id="currentIndex">0</span> of <span id="totalCount">0</span></p>
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h2>➕ Add New Flashcard</h2>
+            <div class="form-group">
+                <label>Level</label>
+                <select id="newLevel">
+                    <option value="1">Level 1: Beginner 🟢</option>
+                    <option value="2">Level 2: Intermediate 🔵</option>
+                    <option value="3">Level 3: Advanced 🟡</option>
+                    <option value="4">Level 4: Pro 🟣</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="newCategory">
+                    <option value="basics">Basics & Syntax</option>
+                    <option value="data-types">Data Types</option>
+                    <option value="operators">Operators</option>
+                    <option value="conditionals">If-Else</option>
+                    <option value="loops">Loops</option>
+                    <option value="functions">Functions</option>
+                    <option value="lists">Lists & Tuples</option>
+                    <option value="dict">Dict & Sets</option>
+                    <option value="strings">String Methods</option>
+                    <option value="files">File Handling</option>
+                    <option value="errors">Error Handling</option>
+                    <option value="oops">OOPs</option>
+                    <option value="modules">Modules</option>
+                    <option value="advanced">Advanced Topics</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Question</label>
+                <input type="text" id="newQuestion" placeholder="What is a list in Python?">
+            </div>
+            <div class="form-group">
+                <label>Code Example (Optional)</label>
+                <textarea id="newCode" placeholder="my_list = [1, 2, 3]"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Answer</label>
+                <textarea id="newAnswer" placeholder="A list is an ordered collection..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Answer Code (Optional)</label>
+                <textarea id="newAnswerCode" placeholder="print(my_list[0]) # Output: 1"></textarea>
+            </div>
+            <div class="flex">
+                <button class="btn-green" onclick="addCard()">Save Card</button>
+                <button onclick="closeModal('addModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Cards Modal -->
+    <div class="modal" id="manageModal">
+        <div class="modal-content">
+            <h2>📋 Manage Flashcards</h2>
+            <div class="card-list" id="cardList"></div>
+            <button onclick="closeModal('manageModal')" style="margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // COMPLETE PYTHON COURSE - SCRATCH TO PRO
+        let defaultCards = [
+            // ========== LEVEL 1: BEGINNER ==========
+            { id: 1, level: 1, category: 'basics', question: 'How to print "Hello World" in Python?', code: '', answer: 'Use the print() function', answerCode: 'print("Hello World")', learned: false, attempts: 0, correct: 0 },
+            { id: 2, level: 1, category: 'basics', question: 'How to take user input?', code: '', answer: 'Use input() function - it always returns a string', answerCode: 'name = input("Enter your name: ")\nprint(name)', learned: false, attempts: 0, correct: 0 },
+            { id: 3, level: 1, category: 'basics', question: 'How to write comments in Python?', code: '', answer: 'Use # for single line, """ """ for multi-line', answerCode: '# This is a comment\n"""\nThis is a\nmulti-line comment\n"""', learned: false, attempts: 0, correct: 0 },
+            { id: 4, level: 1, category: 'data-types', question: 'What are the main data types in Python?', code: '', answer: 'int, float, str, bool, list, tuple, dict, set, NoneType', answerCode: 'x = 5 # int\ny = 3.14 # float\nz = "Hi" # str\nflag = True # bool', learned: false, attempts: 0, correct: 0 },
+            { id: 5, level: 1, category: 'data-types', question: 'How to check data type of a variable?', code: 'x = 10', answer: 'Use type() function', answerCode: 'print(type(x)) # <class \'int\'>', learned: false, attempts: 0, correct: 0 },
+            { id: 6, level: 1, category: 'operators', question: 'What does // operator do?', code: 'result = 10 // 3', answer: 'Floor division - returns integer part of division', answerCode: 'print(10 // 3) # Output: 3\nprint(10 / 3) # Output: 3.333...', learned: false, attempts: 0, correct: 0 },
+            { id: 7, level: 1, category: 'operators', question: 'What does % operator do?', code: 'result = 10 % 3', answer: 'Modulus - returns remainder of division', answerCode: 'print(10 % 3) # Output: 1', learned: false, attempts: 0, correct: 0 },
+            { id: 8, level: 1, category: 'operators', question: 'What does ** operator do?', code: 'result = 2 ** 3', answer: 'Exponentiation - power operator', answerCode: 'print(2 ** 3) # Output: 8', learned: false, attempts: 0, correct: 0 },
+            { id: 9, level: 1, category: 'conditionals', question: 'How to write if-else in Python?', code: '', answer: 'Use if, elif, else keywords with indentation', answerCode: 'age = 18\nif age >= 18:\n print("Adult")\nelse:\n print("Minor")', learned: false, attempts: 0, correct: 0 },
+            { id: 10, level: 1, category: 'conditionals', question: 'What are comparison operators?', code: '', answer: '== (equal),!= (not equal), >, <, >=, <=', answerCode: 'x = 5\ny = 10\nprint(x == y) # False\nprint(x < y) # True', learned: false, attempts: 0, correct: 0 },
+
+            // ========== LEVEL 2: INTERMEDIATE ==========
+            { id: 11, level: 2, category: 'loops', question: 'How does for loop work in Python?', code: '', answer: 'Iterates over sequence (list, string, range, etc.)', answerCode: 'for i in range(5):\n print(i)\n# Output: 0 1 2 3 4', learned: false, attempts: 0, correct: 0 },
+            { id: 12, level: 2, category: 'loops', question: 'How does while loop work?', code: '', answer: 'Runs until condition becomes False', answerCode: 'i = 0\nwhile i < 5:\n print(i)\n i += 1', learned: false, attempts: 0, correct: 0 },
+            { id: 13, level: 2, category: 'loops', question: 'What do break and continue do?', code: '', answer: 'break: exits loop, continue: skips to next iteration', answerCode: 'for i in range(5):\n if i == 3:\n break # stops at 3\n if i == 1:\n continue # skips 1\n print(i)', learned: false, attempts: 0, correct: 0 },
+            { id: 14, level: 2, category: 'lists', question: 'How to create and access a list?', code: 'fruits = ["apple", "banana", "cherry"]', answer: 'Lists are ordered, mutable. Index starts at 0', answerCode: 'print(fruits[0]) # apple\nfruits.append("orange")\nfruits[1] = "mango"', learned: false, attempts: 0, correct: 0 },
+            { id: 15, level: 2, category: 'lists', question: 'What is list slicing?', code: 'nums = [0,1,2,3,4,5]', answer: 'Extract part of list: list[start:end:step]', answerCode: 'print(nums[1:4]) # [1,2,3]\nprint(nums[::2]) # [0,2,4]\nprint(nums[::-1]) # [5,4,3,2,1,0]', learned: false, attempts: 0, correct: 0 },
+            { id: 16, level: 2, category: 'lists', question: 'What is list comprehension?', code: '', answer: 'Short way to create lists in one line', answerCode: 'squares = [x**2 for x in range(5)]\n# [0, 1, 4, 9, 16]\nevens = [x for x in range(10) if x%2==0]', learned: false, attempts: 0, correct: 0 },
+            { id: 17, level: 2, category: 'functions', question: 'How to define a function?', code: '', answer: 'Use def keyword. Can return values', answerCode: 'def greet(name):\n return f"Hello {name}"\n\nprint(greet("Siddhi"))', learned: false, attempts: 0, correct: 0 },
+            { id: 18, level: 2, category: 'functions', question: 'What are *args and **kwargs?', code: '', answer: '*args: multiple positional args, **kwargs: keyword args', answerCode: 'def func(*args, **kwargs):\n print(args) # tuple\n print(kwargs) # dict\n\nfunc(1,2,3, name="Siddhi")', learned: false, attempts: 0, correct: 0 },
+            { id: 19, level: 2, category: 'dict', question: 'How to create and use dictionary?', code: 'student = {"name": "Siddhi", "age": 18}', answer: 'Dict stores key-value pairs. Access by key', answerCode: 'print(student["name"]) # Siddhi\nstudent["city"] = "Ahilyanagar"\ndel student["age"]', learned: false, attempts: 0, correct: 0 },
+            { id: 20, level: 2, category: 'dict', question: 'How to loop through dictionary?', code: 'marks = {"Math": 90, "Sci": 85}', answer: 'Use.items() for key-value,.keys() for keys,.values() for values', answerCode: 'for sub, score in marks.items():\n print(f"{sub}: {score}")', learned: false, attempts: 0, correct: 0 },
+            { id: 21, level: 2, category: 'strings', question: 'How to format strings in Python?', code: '', answer: 'f-strings (best),.format(), % operator', answerCode: 'name = "Siddhi"\nage = 18\nprint(f"{name} is {age}")\nprint("{} is {}".format(name, age))', learned: false, attempts: 0, correct: 0 },
+            { id: 22, level: 2, category: 'strings', question: 'Common string methods?', code: '', answer: 'upper(), lower(), strip(), split(), join(), replace()', answerCode: 'text = " hello "\nprint(text.strip().upper()) # HELLO\nprint(text.split()) # [\'hello\']', learned: false, attempts: 0, correct: 0 },
+
+            // ========== LEVEL 3: ADVANCED ==========
+            { id: 23, level: 3, category: 'files', question: 'How to read/write files?', code: '', answer: 'Use open() with mode: r(read), w(write), a(append)', answerCode: '# Write\nwith open("file.txt", "w") as f:\n f.write("Hello")\n\n# Read\nwith open("file.txt", "r") as f:\n print(f.read())', learned: false, attempts: 0, correct: 0 },
+            { id: 24, level: 3, category: 'errors', question: 'How to handle exceptions?', code: '', answer: 'Use try-except-finally blocks', answerCode: 'try:\n x = 10 / 0\nexcept ZeroDivisionError:\n print("Cannot divide by zero")\nfinally:\n print("Done")', learned: false, attempts: 0, correct: 0 },
+            { id: 25, level: 3, category: 'oops', question: 'How to create a class?', code: '', answer: 'Use class keyword. __init__ is constructor', answerCode: 'class Student:\n def __init__(self, name):\n self.name = name\n def greet(self):\n return f"Hi {self.name}"\n\ns = Student("Siddhi")', learned: false, attempts: 0, correct: 0 },
+            { id: 26, level: 3, category: 'oops', question: 'What is inheritance?', code: '', answer: 'Child class inherits from parent class', answerCode: 'class Animal:\n def speak(self): pass\n\nclass Dog(Animal):\n def speak(self):\n return "Woof"', learned: false, attempts: 0, correct: 0 },
+            { id: 27, level: 3, category: 'modules', question: 'How to import modules?', code: '', answer: 'import module, from module import func, import as alias', answerCode: 'import math\nprint(math.sqrt(16)) # 4.0\n\nfrom math import pi\nprint(pi) # 3.14159', learned: false, attempts: 0, correct: 0 },
+            { id: 28, level: 3, category: 'advanced', question: 'What is a lambda function?', code: '', answer: 'Anonymous one-line function', answerCode: 'square = lambda x: x**2\nprint(square(5)) # 25\n\nnums = [1,2,3]\ndoubled = list(map(lambda x: x*2, nums))', learned: false, attempts: 0, correct: 0 },
+            { id: 29, level: 3, category: 'advanced', question: 'What are decorators?', code: '', answer: 'Functions that modify other functions', answerCode: 'def decorator(func):\n def wrapper():\n print("Before")\n func()\n print("After")\n return wrapper\n\n@decorator\ndef hello():\n print("Hello")', learned: false, attempts: 0, correct: 0 },
+            { id: 30, level: 3, category: 'advanced', question: 'What is a generator?', code: '', answer: 'Function that yields values one at a time using yield', answerCode: 'def count_up(n):\n i = 0\n while i < n:\n yield i\n i += 1\n\nfor num in count_up(3):\n print(num) # 0 1 2', learned: false, attempts: 0, correct: 0 },
+            // ========== LEVEL 4: PRO ==========
+            { id: 31, level: 4, category: 'advanced', question: 'What is list vs tuple vs set vs dict?', code: '', answer: 'List:[mutable], Tuple:(immutable), Set:{unique}, Dict{key:value}', answerCode: 'lst = [1,2,3] # ordered, mutable\ntup = (1,2,3) # ordered, immutable\nst = {1,2,3} # unordered, unique\ndct = {"a":1} # key-value', learned: false, attempts: 0, correct: 0 },
+            { id: 32, level: 4, category: 'advanced', question: 'What is *args vs **kwargs?', code: '', answer: '*args: variable positional args (tuple), **kwargs: keyword args (dict)', answerCode: 'def func(*args, **kwargs):\n print(args) # (1,2,3)\n print(kwargs) # {\'name\':\'Siddhi\'}\n\nfunc(1,2,3,name="Siddhi")', learned: false, attempts: 0, correct: 0 },
+            { id: 33, level: 4, category: 'advanced', question: 'What is GIL in Python?', code: '', answer: 'Global Interpreter Lock - allows only one thread to execute Python bytecode at a time', answerCode: '# GIL affects CPU-bound threads\n# Use multiprocessing for CPU tasks\n# Use threading for I/O tasks', learned: false, attempts: 0, correct: 0 },
+            { id: 34, level: 4, category: 'advanced', question: 'Difference: is vs ==?', code: '', answer: 'is: identity (same object), ==: equality (same value)', answerCode: 'a = [1,2,3]\nb = [1,2,3]\nprint(a == b) # True\nprint(a is b) # False\n\nc = a\nprint(a is c) # True', learned: false, attempts: 0, correct: 0 },
+            { id: 35, level: 4, category: 'advanced', question: 'What are dunder methods?', code: '', answer: 'Magic methods with __ like __init__, __str__, __len__', answerCode: 'class Point:\n def __init__(self, x, y):\n self.x, self.y = x, y\n def __str__(self):\n return f"({self.x},{self.y})"\n def __add__(self, other):\n return Point(self.x+other.x, self.y+other.y)', learned: false, attempts: 0, correct: 0 },
+            { id: 36, level: 4, category: 'advanced', question: 'What is a context manager?', code: '', answer: 'Object with __enter__ and __exit__ methods, used with "with"', answerCode: 'with open("file.txt") as f:\n data = f.read()\n# File auto-closed even if error', learned: false, attempts: 0, correct: 0 },
+            { id: 37, level: 4, category: 'advanced', question: 'What is duck typing?', code: '', answer: '"If it walks like a duck, it\'s a duck" - focus on behavior not type', answerCode: 'def quack(duck):\n duck.quack() # Works if object has quack()\n\nclass Duck:\n def quack(self): print("Quack")\n\nclass Person:\n def quack(self): print("I\'m quacking")', learned: false, attempts: 0, correct: 0 },
+                        { id: 38, level: 4, category: 'advanced', question: 'What is @property decorator?', code: '', answer: 'Makes method accessible like attribute', answerCode: 'class Circle:\n def __init__(self, r):\n self._radius = r\n @property\n def area(self):\n return 3.14 * self._radius ** 2\n\nc = Circle(5)\nprint(c.area) # No () needed', learned: false, attempts: 0, correct: 0 },
+            { id: 39, level: 4, category: 'advanced', question: 'What is metaclass in Python?', code: '', answer: 'Class of a class - defines how classes behave. type is default metaclass', answerCode: 'class Meta(type):\n def __new__(cls, name, bases, dct):\n dct["attr"] = 100\n return super().__new__(cls, name, bases, dct)\n\nclass MyClass(metaclass=Meta):\n pass\n\nprint(MyClass.attr) # 100', learned: false, attempts: 0, correct: 0 },
+            { id: 40, level: 4, category: 'advanced', question: 'Difference: deepcopy vs shallow copy?', code: '', answer: 'shallow: copies references, deepcopy: copies all nested objects', answerCode: 'import copy\nlst = [[1,2], [3,4]]\nshallow = copy.copy(lst)\ndeep = copy.deepcopy(lst)\n\nlst[0][0] = 99\nprint(shallow[0][0]) # 99\nprint(deep[0][0]) # 1', learned: false, attempts: 0, correct: 0 },
+            { id: 41, level: 4, category: 'advanced', question: 'What is monkey patching?', code: '', answer: 'Dynamically modifying class/module at runtime', answerCode: 'class MyClass:\n pass\n\ndef new_method(self):\n return "patched"\n\nMyClass.method = new_method\nobj = MyClass()\nprint(obj.method()) # patched', learned: false, attempts: 0, correct: 0 },
+            { id: 42, level: 4, category: 'advanced', question: 'What is MRO in Python?', code: '', answer: 'Method Resolution Order - order in which base classes are searched', answerCode: 'class A: pass\nclass B(A): pass\nclass C(A): pass\nclass D(B, C): pass\n\nprint(D.__mro__)\n# D -> B -> C -> A -> object', learned: false, attempts: 0, correct: 0 },
+            { id: 43, level: 4, category: 'advanced', question: 'What are descriptors?', code: '', answer: 'Objects with __get__, __set__, __delete__ methods. Control attribute access', answerCode: 'class Descriptor:\n def __get__(self, obj, type):\n return self.value\n def __set__(self, obj, value):\n self.value = value\n\nclass MyClass:\n attr = Descriptor()', learned: false, attempts: 0, correct: 0 },
+            { id: 44, level: 4, category: 'advanced', question: 'What is async/await?', code: '', answer: 'Asynchronous programming - non-blocking code execution', answerCode: 'import asyncio\n\nasync def main():\n await asyncio.sleep(1)\n print("Done")\n\nasyncio.run(main())', learned: false, attempts: 0, correct: 0 },
+            { id: 45, level: 4, category: 'advanced', question: 'Difference: map vs filter vs reduce?', code: '', answer: 'map: transform all, filter: select some, reduce: combine to one', answerCode: 'from functools import reduce\nnums = [1,2,3,4]\n\nsquares = list(map(lambda x: x**2, nums))\nevens = list(filter(lambda x: x%2==0, nums))\nsum_all = reduce(lambda x,y: x+y, nums)', learned: false, attempts: 0, correct: 0 },
+            { id: 46, level: 4, category: 'advanced', question: 'What is a closure?', code: '', answer: 'Inner function that remembers outer function variables', answerCode: 'def outer(x):\n def inner(y):\n return x + y\n return inner\n\nadd5 = outer(5)\nprint(add5(3)) # 8', learned: false, attempts: 0, correct: 0 },
+            { id: 47, level: 4, category: 'advanced', question: 'What is * vs ** unpacking?', code: '', answer: '*: unpacks iterable, **: unpacks dict', answerCode: 'lst = [1, 2, 3]\nprint(*lst) # 1 2 3\n\ndct = {"a": 1, "b": 2}\nprint({**dct, "c": 3})', learned: false, attempts: 0, correct: 0 },
+            { id: 48, level: 4, category: 'advanced', question: 'What is the walrus operator :=?', code: '', answer: 'Assignment expression - assign and return value', answerCode: 'if (n := len([1,2,3])) > 2:\n print(f"List has {n} items")\n\n# Without walrus:\n# n = len([1,2,3])\n# if n > 2:...', learned: false, attempts: 0, correct: 0 },
+            { id: 49, level: 4, category: 'advanced', question: 'What is slots in Python?', code: '', answer: '__slots__ limits attributes, saves memory, faster access', answerCode: 'class Point:\n __slots__ = ["x", "y"]\n def __init__(self, x, y):\n self.x = x\n self.y = y\n\np = Point(1,2)\n# p.z = 3 # Error!', learned: false, attempts: 0, correct: 0 },
+            { id: 50, level: 4, category: 'advanced', question: 'What is namespace and scope?', code: '', answer: 'Namespace: mapping names to objects. LEGB rule: Local, Enclosing, Global, Built-in', answerCode: 'x = "global"\ndef outer():\n x = "enclosing"\n def inner():\n x = "local"\n print(x)\n inner()\nouter() # prints "local"', learned: false, attempts: 0, correct: 0 }
+        ];
+
+        // QUIZ QUESTIONS FOR EACH CATEGORY
+        const quizQuestions = {
+            basics: [
+                { q: 'Which function is used to display output?', options: ['print()', 'input()', 'output()', 'show()'], correct: 0 },
+                { q: 'What does input() return?', options: ['int', 'float', 'string', 'bool'], correct: 2 },
+                { q: 'Which operator gives floor division?', options: ['/', '//', '%', '**'], correct: 1 },
+                { q: 'How to write single line comment?', options: ['//', '/* */', '#', '--'], correct: 2 },
+                { q: 'What is the output of 5 ** 2?', options: ['10', '25', '7', '3'], correct: 1 }
+            ],
+            'data-types': [
+                { q: 'Which is NOT a Python data type?', options: ['list', 'dict', 'array', 'tuple'], correct: 2 },
+                { q: 'What is the output of type(3.14)?', options: ['int', 'float', 'str', 'number'], correct: 1 },
+                { q: 'Which is immutable?', options: ['list', 'dict', 'tuple', 'set'], correct: 2 },
+                { q: 'What is type(None)?', options: ['None', 'null', 'NoneType', 'void'], correct: 2 },
+                { q: 'bool(0) returns?', options: ['True', 'False', '0', 'Error'], correct: 1 }
+            ],
+            operators: [
+                { q: 'What does % operator return?', options: ['Quotient', 'Remainder', 'Product', 'Sum'], correct: 1 },
+                { q: '10 // 3 =?', options: ['3.33', '3', '4', '1'], correct: 1 },
+                { q: 'Which is logical AND?', options: ['&', 'and', '&&', 'AND'], correct: 1 },
+                { q: 'not True =?', options: ['True', 'False', 'None', 'Error'], correct: 1 },
+                { q: '2 ** 3 ** 2 =?', options: ['64', '512', '36', '12'], correct: 1 }
+            ],
+            conditionals: [
+                { q: 'Keyword for else-if?', options: ['elseif', 'else if', 'elif', 'elsif'], correct: 2 },
+                { q: '5 > 3 and 2 < 4 =?', options: ['True', 'False', 'Error', 'None'], correct: 0 },
+                { q: 'Which is ternary operator?', options: ['x if cond else y', 'cond? x : y', 'if cond: x else y', 'x else y if cond'], correct: 0 },
+                { q: 'if not False: print("Yes") outputs?', options: ['Yes', 'No', 'False', 'Error'], correct: 0 },
+                { q: 'Empty string in if condition is?', options: ['True', 'False', 'Error', 'None'], correct: 1 }
+            ],
+            loops: [
+                { q: 'Which loop is used for known iterations?', options: ['while', 'for', 'do-while', 'repeat'], correct: 1 },
+                { q: 'What does range(5) generate?', options: ['1,2,3,4,5', '0,1,2,3,4', '5', '1,2,3,4'], correct: 1 },
+                { q: 'break does what?', options: ['Skips iteration', 'Exits loop', 'Pauses loop', 'Restarts loop'], correct: 1 },
+                { q: 'continue does what?', options: ['Exits loop', 'Skips to next iteration', 'Pauses', 'Stops'], correct: 1 },
+                { q: 'for i in "abc": print(i) outputs?', options: ['abc', 'a b c', 'Error', '0 1 2'], correct: 1 }
+            ],
+            functions: [
+                { q: 'Which keyword defines a function?', options: ['func', 'function', 'def', 'define'], correct: 2 },
+                { q: 'What does return do?', options: ['Prints value', 'Returns value', 'Stops function', 'Both B and C'], correct: 3 },
+                { q: '*args is what type?', options: ['list', 'tuple', 'dict', 'set'], correct: 1 },
+                { q: '**kwargs is what type?', options: ['list', 'tuple', 'dict', 'set'], correct: 2 },
+                { q: 'Default parameter syntax?', options: ['def f(x=5)', 'def f(x:=5)', 'def f(x:5)', 'def f(5=x)'], correct: 0 }
+            ],
+            lists: [
+                { q: 'How to add item to list?', options: ['add()', 'append()', 'insert()', 'Both B and C'], correct: 3 },
+                { q: 'What is list[0]?', options: ['First item', 'Last item', 'Length', 'Error'], correct: 0 },
+                { q: 'list[-1] returns?', options: ['First item', 'Last item', 'Error', 'Length'], correct: 1 },
+                { q: 'Which creates shallow copy?', options: ['list.copy()', 'list[:]', 'Both', 'None'], correct: 2 },
+                { q: '[x**2 for x in range(3)] =?', options: ['[0,1,4]', '[1,4,9]', '[0,1,2]', '[1,2,3]'], correct: 0 }
+            ],
+            dict: [
+                { q: 'Dictionary stores?', options: ['Values only', 'Keys only', 'Key-value pairs', 'Indexes'], correct: 2 },
+                { q: 'How to access dict value?', options: ['dict.value', 'dict[key]', 'dict->key', 'dict(key)'], correct: 1 },
+                { q: 'dict.get("key", default) does what?', options: ['Gets value', 'Returns default if key missing', 'Sets default', 'Error'], correct: 1 },
+                { q: 'dict.keys() returns?', options: ['list', 'tuple', 'dict_keys object', 'set'], correct: 2 },
+                { q: 'How to merge dicts?', options: ['dict1 + dict2', '{**dict1, **dict2}', 'dict1.merge(dict2)', 'dict1 & dict2'], correct: 1 }
+            ],
+            strings: [
+                { q: 'Best string formatting?', options: ['%', '.format()', 'f-strings', 'concat'], correct: 2 },
+                { q: '"hello".upper() =?', options: ['hello', 'HELLO', 'Hello', 'Error'], correct: 1 },
+                { q: '" hi ".strip() =?', options: ['" hi "', '"hi"', '" hi "', 'Error'], correct: 1 },
+                { q: '"a,b,c".split(",") =?', options: ['"abc"', '[\'a\',\'b\',\'c\']', 'a b c', 'Error'], correct: 1 },
+                { q: '"".join([\'a\',\'b\']) =?', options: ['ab', 'a b', '[a,b]', 'Error'], correct: 0 }
+            ],
+            files: [
+                { q: 'Mode to read file?', options: ['w', 'r', 'a', 'x'], correct: 1 },
+                { q: 'Mode to append to file?', options: ['w', 'r', 'a', 'r+'], correct: 2 },
+                { q: 'Why use "with open"?', options: ['Faster', 'Auto-closes file', 'Required', 'Better syntax'], correct: 1 },
+                { q: 'f.read() returns?', options: ['list', 'string', 'bytes', 'dict'], correct: 1 },
+                { q: 'f.readlines() returns?', options: ['string', 'list of lines', 'dict', 'tuple'], correct: 1 }
+            ],
+            errors: [
+                { q: 'Block to catch errors?', options: ['try-except', 'catch', 'error', 'exception'], correct: 0 },
+                { q: 'finally block runs?', options: ['Only on error', 'Only on success', 'Always', 'Never'], correct: 2 },
+                { q: 'Which is built-in exception?', options: ['ZeroDivisionError', 'ValueError', 'TypeError', 'All'], correct: 3 },
+                { q: 'How to raise exception?', options: ['throw', 'raise', 'error', 'except'], correct: 1 },
+                { q: 'assert checks?', options: ['Type', 'Value', 'Condition', 'Error'], correct: 2 }
+            ],
+            oops: [
+                { q: 'What is __init__?', options: ['Destructor', 'Constructor', 'Method', 'Variable'], correct: 1 },
+                { q: 'Keyword to create class?', options: ['class', 'Class', 'object', 'def'], correct: 0 },
+                { q: 'self refers to?', options: ['Class', 'Instance', 'Method', 'Parent'], correct: 1 },
+                { q: 'Inheritance syntax?', options: ['class B : A', 'class B(A)', 'class B -> A', 'class B extends A'], correct: 1 },
+                { q: '__str__ does what?', options: ['Converts to string', 'String representation', 'Both', 'None'], correct: 2 }
+            ],
+            modules: [
+                { q: 'How to import specific function?', options: ['import math.sqrt', 'from math import sqrt', 'import sqrt from math', 'require math.sqrt'], correct: 1 },
+                { q: 'import math as m does what?', options: ['Renames module', 'Creates alias', 'Both', 'Error'], correct: 2 },
+                { q: 'Which is standard library?', options: ['requests', 'numpy', 'os', 'pandas'], correct: 2 },
+                { q: 'pip is used for?', options: ['Run Python', 'Install packages', 'Debug', 'Compile'], correct: 1 },
+                { q: '__name__ == "__main__" checks?', options: ['Module name', 'If file is run directly', 'Function name', 'Class name'], correct: 1 }
+            ],
+            advanced: [
+                { q: 'lambda is?', options: ['Named function', 'Anonymous function', 'Class', 'Module'], correct: 1 },
+                { q: 'Decorator syntax?', options: ['@decorator', '#decorator', '$decorator', '%decorator'], correct: 0 },
+                { q: 'Generator uses?', options: ['return', 'yield', 'generate', 'next'], correct: 1 },
+                { q: 'map() does what?', options: ['Filters items', 'Transforms all items', 'Reduces to one', 'Sorts'], correct: 1 },
+                { q: 'is vs ==?', options: ['Same', 'is: identity, ==: equality', '==: identity, is: equality', 'Both same'], correct: 1 }
+            ]
+        };
+
+        let cards = JSON.parse(localStorage.getItem('pythonCards')) || defaultCards;
+        let currentCardIndex = 0;
+        let filteredCards = [...cards];
+        let stats = JSON.parse(localStorage.getItem('pythonStats')) || { streak: 0, lastDate: null, quizScore: 0 };
+        let currentQuiz = [];
+        let currentQuizIndex = 0;
+        let quizCorrectCount = 0;
+        let currentTopic = 'all';
+
+        // INIT
+        function init() {
+            loadCards();
+            updateStats();
+            if (filteredCards.length > 0) showCard(0);
+            checkStreak();
+        }
+
+        function loadCards() {
+            filteredCards = [...cards];
+            document.getElementById('totalCards').textContent = cards.length;
+            document.getElementById('totalCount').textContent = filteredCards.length;
+        }
+
+        function showCard(index) {
+            if (filteredCards.length === 0) return;
+            currentCardIndex = index;
+            const card = filteredCards[index];
+            document.getElementById('cardCategory').textContent = card.category.toUpperCase();
+            const levelEl = document.getElementById('cardLevel');
+            levelEl.textContent = `Level ${card.level}`;
+            levelEl.className = `card-level level-${card.level}`;
+            document.getElementById('cardQuestion').textContent = card.question;
+            document.getElementById('cardCode').textContent = card.code;
+            document.getElementById('cardCode').style.display = card.code? 'block' : 'none';
+            document.getElementById('cardAnswer').textContent = card.answer;
+            document.getElementById('cardAnswerCode').textContent = card.answerCode || '';
+            document.getElementById('cardAnswerCode').style.display = card.answerCode? 'block' : 'none';
+            document.getElementById('currentIndex').textContent = index + 1;
+            document.getElementById('flashcard').classList.remove('flipped');
+            checkTopicCompletion();
+        }
+
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentCardIndex < filteredCards.length - 1) {
+                showCard(currentCardIndex + 1);
+            } else {
+                document.getElementById('topicComplete').classList.add('active');
+                setTimeout(() => {
+                    document.getElementById('topicComplete').classList.remove('active');
+                }, 3000);
+                showCard(0);
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                showCard(currentCardIndex - 1);
+            }
+        }
+
+        function markCorrect() {
+            const card = filteredCards[currentCardIndex];
+            const cardIndex = cards.findIndex(c => c.id === card.id);
+            cards[cardIndex].attempts++;
+            cards[cardIndex].correct++;
+            cards[cardIndex].learned = true;
+            saveCards();
+            updateStats();
+            updateStreak();
+            setTimeout(() => nextCard(), 500);
+        }
+
+        function markWrong() {
+            const card = filteredCards[currentCardIndex];
+            const cardIndex = cards.findIndex(c => c.id === card.id);
+            cards[cardIndex].attempts++;
+            cards[cardIndex].learned = false;
+            saveCards();
+            updateStats();
+            setTimeout(() => nextCard(), 500);
+        }
+
+        function shuffleCards() {
+            filteredCards = [...filteredCards].sort(() => Math.random() - 0.5);
+            showCard(0);
+        }
+
+        function filterByLevel() {
+            const level = document.getElementById('levelFilter').value;
+            filterCards();
+        }
+
+        function filterCards() {
+            const category = document.getElementById('categoryFilter').value;
+            const level = document.getElementById('levelFilter').value;
+            currentTopic = category;
+            filteredCards = cards.filter(c => {
+                const catMatch = category === 'all' || c.category === category;
+                const levelMatch = level === 'all' || c.level == level;
+                return catMatch && levelMatch;
+            });
+            document.getElementById('totalCount').textContent = filteredCards.length;
+            document.getElementById('quizContainer').classList.remove('active');
+            showCard(0);
+        }
+
+        function checkTopicCompletion() {
+            if (currentTopic === 'all') return;
+            const topicCards = cards.filter(c => c.category === currentTopic);
+            const learnedCount = topicCards.filter(c => c.learned).length;
+            if (learnedCount === topicCards.length && topicCards.length > 0) {
+                document.getElementById('topicComplete').classList.add('active');
+            }
+        }
+
+        // QUIZ SYSTEM
+        function startTopicQuiz() {
+            if (currentTopic === 'all') {
+                alert('Pehle koi specific topic select karo! 📚');
+                return;
+            }
+            currentQuiz = quizQuestions[currentTopic] || [];
+            if (currentQuiz.length === 0) {
+                alert('Is topic ke liye quiz nahi hai abhi 😅');
+                return;
+            }
+            currentQuizIndex = 0;
+            quizCorrectCount = 0;
+            document.getElementById('quizContainer').classList.add('active');
+            document.getElementById('quizTotalQ').textContent = currentQuiz.length;
+            showQuizQuestion();
+            document.getElementById('quizContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showQuizQuestion() {
+            const q = currentQuiz[currentQuizIndex];
+            document.getElementById('quizQuestion').textContent = `Q${currentQuizIndex + 1}: ${q.q}`;
+            document.getElementById('quizCurrentQ').textContent = currentQuizIndex + 1;
+            document.getElementById('quizOptions').innerHTML = q.options.map((opt, i) => `
+                <div class="quiz-option" onclick="selectQuizAnswer(${i})">${opt}</div>
+            `).join('');
+            document.getElementById('quizResult').textContent = '';
+                  document.getElementById('nextQuizBtn').style.display = 'none';
+        document.getElementById('finishQuizBtn').style.display = 'none';
+        }
+
+        function selectQuizAnswer(selected) {
+            const q = currentQuiz[currentQuizIndex];
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach((opt, i) => {
+                opt.onclick = null;
+                if (i === q.correct) opt.classList.add('correct');
+                else if (i === selected) opt.classList.add('wrong');
+            });
+            if (selected === q.correct) {
+                quizCorrectCount++;
+                document.getElementById('quizResult').textContent = '✅ Correct! Well done!';
+                document.getElementById('quizResult').style.color = 'var(--green)';
+            } else {
+                document.getElementById('quizResult').textContent = `❌ Wrong! Correct answer: ${q.options[q.correct]}`;
+                document.getElementById('quizResult').style.color = 'var(--red)';
+            }
+            if (currentQuizIndex < currentQuiz.length - 1) {
+                document.getElementById('nextQuizBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('finishQuizBtn').style.display = 'inline-block';
+            }
+        }
+
+        function nextQuizQuestion() {
+            currentQuizIndex++;
+            showQuizQuestion();
+        }
+
+        function finishQuiz() {
+            const score = Math.round((quizCorrectCount / currentQuiz.length) * 100);
+            stats.quizScore = score;
+            localStorage.setItem('pythonStats', JSON.stringify(stats));
+            updateStats();
+            alert(`🎉 Quiz Complete!\n\nScore: ${score}%\nCorrect: ${quizCorrectCount}/${currentQuiz.length}\n\n${score >= 80? 'Excellent! Topic master kar liya! 👑' : score >= 60? 'Good! Thoda aur practice karo 💪' : 'Phir se cards revise karo 📚'}`);
+            document.getElementById('quizContainer').classList.remove('active');
+        }
+
+        function updateStats() {
+            const learned = cards.filter(c => c.learned).length;
+            const totalAttempts = cards.reduce((sum, c) => sum + c.attempts, 0);
+            const totalCorrect = cards.reduce((sum, c) => sum + c.correct, 0);
+            const accuracy = totalAttempts > 0? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+
+            document.getElementById('learnedCards').textContent = learned;
+            document.getElementById('quizScore').textContent = stats.quizScore + '%';
+            document.getElementById('streak').textContent = stats.streak;
+            document.getElementById('progressBar').style.width = cards.length > 0? (learned / cards.length * 100) + '%' : '0%';
+        }
+
+        function updateStreak() {
+            const today = new Date().toDateString();
+            if (stats.lastDate!== today) {
+                const yesterday = new Date(Date.now() - 86400000).toDateString();
+                stats.streak = stats.lastDate === yesterday? stats.streak + 1 : 1;
+                stats.lastDate = today;
+                localStorage.setItem('pythonStats', JSON.stringify(stats));
+                updateStats();
+            }
+        }
+
+        function checkStreak() {
+            const today = new Date().toDateString();
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            if (stats.lastDate && stats.lastDate!== today && stats.lastDate!== yesterday) {
+                stats.streak = 0;
+                localStorage.setItem('pythonStats', JSON.stringify(stats));
+            }
+        }
+
+        function addCard() {
+            const newCard = {
+                id: Date.now(),
+                level: parseInt(document.getElementById('newLevel').value),
+                category: document.getElementById('newCategory').value,
+                question: document.getElementById('newQuestion').value,
+                code: document.getElementById('newCode').value,
+                answer: document.getElementById('newAnswer').value,
+                answerCode: document.getElementById('newAnswerCode').value,
+                learned: false,
+                attempts: 0,
+                correct: 0
+            };
+            if (!newCard.question ||!newCard.answer) {
+                alert('Question aur Answer zaroori hai!');
+                return;
+            }
+            cards.push(newCard);
+            saveCards();
+            loadCards();
+            closeModal('addModal');
+            alert('Card add ho gaya! ✅');
+            document.getElementById('newQuestion').value = '';
+            document.getElementById('newCode').value = '';
+            document.getElementById('newAnswer').value = '';
+            document.getElementById('newAnswerCode').value = '';
+        }
+
+        function deleteCard(id) {
+            if (confirm('Ye card delete kar du?')) {
+                cards = cards.filter(c => c.id!== id);
+                saveCards();
+                loadCards();
+                renderCardList();
+                if (filteredCards.length > 0) showCard(0);
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function openManageModal() {
+            renderCardList();
+            document.getElementById('manageModal').classList.add('active');
+        }
+
+        function renderCardList() {
+            document.getElementById('cardList').innerHTML = cards.map(c => `
+                <div class="card-item">
+                    <div>
+                        <strong>${c.question}</strong><br>
+                        <span style="opacity: 0.7; font-size: 0.9rem;">Level ${c.level} | ${c.category} | ${c.learned? '✅ Learned' : '📚 Learning'}</span>
+                    </div>
+                    <button class="btn-red" onclick="deleteCard(${c.id})" style="width: auto; padding: 8px 15px;">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function saveCards() {
+            localStorage.setItem('pythonCards', JSON.stringify(cards));
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.dataset.theme;
+            body.dataset.theme = current === 'dark'? 'light' : 'dark';
+            localStorage.setItem('theme', body.dataset.theme);
+        }
+
+        // Load theme
+        document.body.dataset.theme = localStorage.getItem('theme') || 'dark';
+
+        // Init on load
+        init();
+    </script>
+</body>
+</html>
